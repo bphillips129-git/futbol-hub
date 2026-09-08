@@ -1,0 +1,9 @@
+.venv/
+*.pt
+*.mp4
+__pycache__/
+.env
+datasets/
+runs/
+calibration_frames/
+shot_log.json

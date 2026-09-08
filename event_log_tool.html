@@ -1,0 +1,506 @@
+<title>Match Event Log</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #0b1826;
+    --surface: #142943;
+    --surface-2: #1c3556;
+    --border: #2f4d70;
+    --text: #eaf1fa;
+    --text-dim: #8fa8c4;
+    --accent: #ff7a45;
+    --accent-soft: rgba(255, 122, 69, 0.16);
+    --success: #52d17c;
+    --success-soft: rgba(82, 209, 124, 0.14);
+    --warn: #ffcf6b;
+    --warn-soft: rgba(255, 207, 107, 0.14);
+    --grid-line: rgba(143, 168, 196, 0.08);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Barlow", system-ui, sans-serif;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  header {
+    padding: 28px 32px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 6px;
+  }
+
+  h1 {
+    font-family: "Barlow Condensed", sans-serif;
+    font-weight: 700;
+    font-size: 34px;
+    letter-spacing: 0.01em;
+    margin: 0 0 8px;
+    text-wrap: balance;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 15px;
+    max-width: 680px;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 28px 32px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  h2 {
+    font-family: "Barlow Condensed", sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 0 0 14px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 18px 20px;
+  }
+
+  .event-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .event-card { border-left: 3px solid var(--border); }
+  .event-card.pending { border-left-color: var(--accent); }
+  .event-card.reviewed.correct { border-left-color: var(--success); }
+  .event-card.reviewed.incorrect { border-left-color: var(--warn); }
+  .event-card.manual { border-left-color: var(--text-dim); }
+
+  .event-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .event-time {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .event-source {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .pipeline-call {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    background: var(--surface-2);
+    border-radius: 3px;
+    padding: 8px 10px;
+    margin: 10px 0;
+  }
+
+  .status-pill {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: var(--surface-2);
+    color: var(--text-dim);
+  }
+
+  .status-pill.correct { background: var(--success-soft); color: var(--success); }
+  .status-pill.incorrect { background: var(--warn-soft); color: var(--warn); }
+  .status-pill.pending { background: var(--accent-soft); color: var(--accent); }
+
+  form.review, form.add-event {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .radio-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .radio-row label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13.5px;
+    cursor: pointer;
+  }
+
+  label.field-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-family: "IBM Plex Mono", monospace;
+  }
+
+  input[type="text"], input[type="number"], select, textarea {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 3px;
+    padding: 9px 10px;
+    font-family: "Barlow", sans-serif;
+    font-size: 14px;
+    width: 100%;
+  }
+
+  textarea { min-height: 64px; resize: vertical; font-family: "Barlow", sans-serif; }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .field-row { grid-template-columns: 1fr; } }
+
+  button {
+    font-family: "Barlow Condensed", sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    background: var(--accent);
+    color: #241005;
+    border: none;
+    border-radius: 3px;
+    padding: 10px 16px;
+    cursor: pointer;
+    align-self: flex-start;
+  }
+
+  button:hover { opacity: 0.9; }
+  button:disabled { background: var(--surface-2); color: var(--text-dim); cursor: not-allowed; }
+
+  .empty-note {
+    color: var(--text-dim);
+    font-size: 13.5px;
+    font-style: italic;
+  }
+
+  .save-status {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .save-status.ok { color: var(--success); }
+  .save-status.err { color: var(--warn); }
+
+  .reviewed-summary {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+
+  .reviewed-summary strong { color: var(--text); }
+</style>
+
+<header>
+  <p class="eyebrow">PGSA Spring 2026 &middot; Shot detection ground truth</p>
+  <h1>Match Event Log</h1>
+  <p class="subtitle">
+    Two different kinds of thing get logged here, kept separate on purpose:
+    <strong>shot attempts</strong> (was there a shot, and did it end in a goal,
+    a save, a block, or a miss) and <strong>restarts</strong> (a kickoff/reset,
+    goal kick, corner, throw-in, etc). A restart is a clue, not proof, that a
+    shot happened: a goal kick only tells you the ball went out over the
+    endline last touched by an offensive player - a missed shot causes that,
+    but so does an errant pass or a turnover. A corner only tells you the last
+    touch was a defensive player's - a save or a block causes that, but so
+    does a defender clearing a cross that was never really a shot. Log each at
+    its own timestamp; watch footage in your own player (or a clip sent to
+    you) and record what you see here.
+  </p>
+</header>
+
+<main>
+  <section>
+    <h2>Events</h2>
+    <div class="event-list" id="eventList">
+      <p class="empty-note">Loading…</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 style="margin-bottom: 4px;">Log a New Event</h2>
+    <p class="empty-note" style="margin: 0 0 10px;">For something you spotted yourself, not something the detector flagged.</p>
+    <form class="add-event" id="addForm">
+      <div class="field-row">
+        <div>
+          <label class="field-label" for="addVideo">Video file</label>
+          <input type="text" id="addVideo" value="WIVY3619.MP4" required>
+        </div>
+        <div>
+          <label class="field-label" for="addTime">Timestamp (mm:ss or seconds)</label>
+          <input type="text" id="addTime" placeholder="e.g. 4:53 or 293" required>
+        </div>
+      </div>
+      <div>
+        <label class="field-label" for="addEventType">Event type</label>
+        <select id="addEventType" required>
+          <option value="">Select…</option>
+          <option value="shot">Shot attempt</option>
+          <option value="restart">Restart / phase change</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="addCategory">What happened</label>
+        <select id="addCategory" required disabled>
+          <option value="">Pick an event type first…</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="addDescription">Description</label>
+        <textarea id="addDescription" placeholder="What did you see happen?" required></textarea>
+      </div>
+      <button type="submit">Log Event</button>
+      <span class="save-status" id="addStatus"></span>
+    </form>
+  </section>
+</main>
+
+<script>
+  let db = null;
+  let events = [];
+
+  const SHOT_CATEGORIES = [
+    ["goal", "Goal"],
+    ["save", "Save"],
+    ["blocked", "Blocked by a defender"],
+    ["missed", "Missed (off target, no deflection)"],
+    ["not_a_shot", "Not a shot attempt"],
+    ["other", "Other"],
+  ];
+  const RESTART_CATEGORIES = [
+    ["kickoff_reset", "Kickoff / reset (center circle)"],
+    ["goal_kick", "Goal kick — out over endline, last touch by an offensive player"],
+    ["corner_kick", "Corner kick — out over endline, last touch by a defensive player"],
+    ["throw_in", "Throw-in"],
+    ["free_kick", "Free kick"],
+    ["penalty", "Penalty"],
+    ["other", "Other"],
+  ];
+
+  document.getElementById("addEventType").addEventListener("change", (e) => {
+    const categorySelect = document.getElementById("addCategory");
+    const options = e.target.value === "shot" ? SHOT_CATEGORIES : e.target.value === "restart" ? RESTART_CATEGORIES : null;
+    if (!options) {
+      categorySelect.disabled = true;
+      categorySelect.innerHTML = '<option value="">Pick an event type first…</option>';
+      return;
+    }
+    categorySelect.disabled = false;
+    categorySelect.innerHTML = '<option value="">Select…</option>' + options.map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
+  });
+
+  function parseTimestamp(raw) {
+    raw = raw.trim();
+    if (raw.includes(":")) {
+      const [m, s] = raw.split(":").map(Number);
+      return m * 60 + s;
+    }
+    return Number(raw);
+  }
+
+  function formatTimestamp(seconds) {
+    if (seconds == null) return "—";
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${String(s).padStart(2, "0")}`;
+  }
+
+  function pipelineCallText(e) {
+    if (!e.pipeline_classification) return "";
+    const p = e.pipeline_classification;
+    if (p.on_target) {
+      return `Detector call: ON TARGET → outcome "${p.outcome}" (confidence: ${p.outcome_confidence}), peak speed ${p.peak_speed_px_per_frame} px/frame`;
+    }
+    return `Detector call: OFF TARGET, closest approach ${p.closest_approach_px}px, peak speed ${p.peak_speed_px_per_frame} px/frame`;
+  }
+
+  function renderEvents() {
+    const listEl = document.getElementById("eventList");
+    if (events.length === 0) {
+      listEl.innerHTML = '<p class="empty-note">No events yet.</p>';
+      return;
+    }
+
+    const sorted = [...events].sort((a, b) => (a.timestamp_seconds ?? 0) - (b.timestamp_seconds ?? 0));
+    listEl.innerHTML = "";
+
+    for (const e of sorted) {
+      const card = document.createElement("div");
+      const statusClass = e.source === "manual" ? "manual" : (e.review_verdict ? `reviewed ${e.review_verdict}` : "pending");
+      card.className = `card event-card ${statusClass}`;
+
+      const pill = e.source === "manual"
+        ? ""
+        : e.review_verdict
+          ? `<span class="status-pill ${e.review_verdict}">${e.review_verdict}</span>`
+          : `<span class="status-pill pending">needs review</span>`;
+
+      card.innerHTML = `
+        <div class="event-top">
+          <span class="event-time">${formatTimestamp(e.timestamp_seconds)} — ${e.video || ""}</span>
+          <span class="event-source">${e.source}</span>
+        </div>
+        ${e.pipeline_classification ? `<div class="pipeline-call">${pipelineCallText(e)}</div>` : ""}
+        ${pill}
+      `;
+
+      if (e.source === "manual" || e.review_verdict) {
+        const summary = document.createElement("div");
+        summary.className = "reviewed-summary";
+        const typeTag = e.event_type ? `[${e.event_type === "shot" ? "Shot" : "Restart"}] ` : "";
+        summary.innerHTML = `${typeTag}<strong>${(e.category || "").replace(/_/g, " ")}</strong> — ${e.description || ""}`;
+        card.appendChild(summary);
+      } else {
+        const form = document.createElement("form");
+        form.className = "review";
+        form.innerHTML = `
+          <div class="radio-row">
+            <label><input type="radio" name="verdict-${e.id}" value="correct"> Correct</label>
+            <label><input type="radio" name="verdict-${e.id}" value="incorrect"> Incorrect</label>
+            <label><input type="radio" name="verdict-${e.id}" value="unsure"> Unsure</label>
+          </div>
+          <select class="review-category">
+            <option value="">What actually happened?</option>
+            <option value="goal">Goal</option>
+            <option value="save">Save</option>
+            <option value="blocked">Blocked by a defender</option>
+            <option value="missed">Missed (off target, no deflection)</option>
+            <option value="not_a_shot">Not a shot attempt</option>
+            <option value="other">Other</option>
+          </select>
+          <textarea placeholder="Describe what you saw"></textarea>
+          <button type="submit">Submit Review</button>
+          <span class="save-status"></span>
+        `;
+        form.addEventListener("submit", async (ev) => {
+          ev.preventDefault();
+          const verdict = form.querySelector('input[type="radio"]:checked')?.value;
+          const category = form.querySelector(".review-category").value;
+          const description = form.querySelector("textarea").value;
+          const statusEl = form.querySelector(".save-status");
+          if (!verdict) {
+            statusEl.textContent = "Pick correct / incorrect / unsure first.";
+            statusEl.className = "save-status err";
+            return;
+          }
+          if (!db) {
+            statusEl.textContent = "Saving isn't available in this view.";
+            statusEl.className = "save-status err";
+            return;
+          }
+          try {
+            await db.doc(`events/${e.id}`).update({
+              event_type: "shot",
+              review_verdict: verdict,
+              category: category || null,
+              description,
+              updated_at: new Date().toISOString(),
+            });
+            statusEl.textContent = "Saved.";
+            statusEl.className = "save-status ok";
+          } catch (err) {
+            statusEl.textContent = "Save failed: " + (err.message || err);
+            statusEl.className = "save-status err";
+          }
+        });
+        card.appendChild(form);
+      }
+
+      listEl.appendChild(card);
+    }
+  }
+
+  document.getElementById("addForm").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const statusEl = document.getElementById("addStatus");
+    const video = document.getElementById("addVideo").value.trim();
+    const timestamp_seconds = parseTimestamp(document.getElementById("addTime").value);
+    const event_type = document.getElementById("addEventType").value;
+    const category = document.getElementById("addCategory").value;
+    const description = document.getElementById("addDescription").value.trim();
+
+    if (!video || isNaN(timestamp_seconds) || !event_type || !category || !description) {
+      statusEl.textContent = "Fill in all fields.";
+      statusEl.className = "save-status err";
+      return;
+    }
+    if (!db) {
+      statusEl.textContent = "Saving isn't available in this view.";
+      statusEl.className = "save-status err";
+      return;
+    }
+
+    try {
+      await db.collection("events").add({
+        source: "manual",
+        event_type,
+        video,
+        timestamp_seconds,
+        category,
+        description,
+        created_at: new Date().toISOString(),
+      });
+      statusEl.textContent = "Logged.";
+      statusEl.className = "save-status ok";
+      document.getElementById("addForm").reset();
+      document.getElementById("addVideo").value = "WIVY3619.MP4";
+      document.getElementById("addCategory").disabled = true;
+      document.getElementById("addCategory").innerHTML = '<option value="">Pick an event type first…</option>';
+    } catch (err) {
+      statusEl.textContent = "Save failed: " + (err.message || err);
+      statusEl.className = "save-status err";
+    }
+  });
+
+  (async () => {
+    db = await claude.use("db");
+    if (!db) {
+      document.getElementById("eventList").innerHTML = '<p class="empty-note">Live data isn\'t available in this view.</p>';
+      return;
+    }
+    db.collection("events").onSnapshot((snap) => {
+      events = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      renderEvents();
+    });
+  })();
+</script>

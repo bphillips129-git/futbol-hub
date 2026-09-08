@@ -1,0 +1,6 @@
+opencv-python-headless==5.0.0.93
+ultralytics==8.4.142
+roboflow==1.4.2
+python-dotenv==1.2.3
+lap==0.5.13
+easyocr==1.7.2
