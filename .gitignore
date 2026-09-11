@@ -6,4 +6,7 @@ __pycache__/
 datasets/
 runs/
 calibration_frames/
-shot_log.json
+clips/
+shot_log*.json
+labeled_events_export.json
+models/*.joblib

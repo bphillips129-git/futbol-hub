@@ -1,0 +1,74 @@
+{
+    "version": "0.2.0",
+    "inputs": [
+        {
+            "id": "videoPath",
+            "type": "promptString",
+            "description": "Path to the video file (e.g. /mnt/c/Users/bphil/OneDrive/Videos/Soccer Videos/game.mp4)"
+        }
+    ],
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Test Tracker",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_tracker.py",
+            "args": ["${input:videoPath}"],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Test Tracking",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_tracking.py",
+            "args": ["${input:videoPath}"],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Test Jersey OCR",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_jersey_ocr.py",
+            "args": ["${input:videoPath}"],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Test Track Merging",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_track_merging.py",
+            "args": ["${input:videoPath}"],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Test Goal Calibration",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_goal_calibration.py",
+            "args": ["${input:videoPath}"],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Test Shot Detection",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_shot_detection.py",
+            "args": ["${input:videoPath}"],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

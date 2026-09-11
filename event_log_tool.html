@@ -229,6 +229,15 @@
   }
 
   .reviewed-summary strong { color: var(--text); }
+
+  .clip-video {
+    display: block;
+    width: 100%;
+    max-width: 480px;
+    border-radius: 3px;
+    margin: 10px 0;
+    background: #000;
+  }
 </style>
 
 <header>
@@ -236,16 +245,27 @@
   <h1>Match Event Log</h1>
   <p class="subtitle">
     Two different kinds of thing get logged here, kept separate on purpose:
-    <strong>shot attempts</strong> (was there a shot, and did it end in a goal,
-    a save, a block, or a miss) and <strong>restarts</strong> (a kickoff/reset,
-    goal kick, corner, throw-in, etc). A restart is a clue, not proof, that a
-    shot happened: a goal kick only tells you the ball went out over the
-    endline last touched by an offensive player - a missed shot causes that,
-    but so does an errant pass or a turnover. A corner only tells you the last
-    touch was a defensive player's - a save or a block causes that, but so
-    does a defender clearing a cross that was never really a shot. Log each at
-    its own timestamp; watch footage in your own player (or a clip sent to
-    you) and record what you see here.
+    <strong>ball actions</strong> (what the ball-carrier actually did - a shot
+    and its outcome, or a pass, cross, header, throw-in, dribble, defensive
+    tackle/block) and <strong>restarts</strong> (a kickoff/reset, goal kick,
+    corner, throw-in, etc). A restart is a clue, not proof, that a shot
+    happened: a goal kick only tells you the ball went out over the endline
+    last touched by an offensive player - a missed shot causes that, but so
+    does an errant pass or a turnover. A corner only tells you the last touch
+    was a defensive player's - a save or a block causes that, but so does a
+    defender clearing a cross that was never really a shot. Log each at its
+    own timestamp; watch footage in your own player (or a clip sent to you)
+    and record what you see here.
+  </p>
+  <p class="subtitle">
+    The ball-action categories mirror the taxonomy used by SoccerNet's Ball
+    Action Spotting benchmark (Pass, Drive, Header, Cross, Throw-in, Shot,
+    Block, Tackle) rather than a one-off list, specifically so labels
+    collected here can double as training data for an action-type classifier:
+    the detector currently flags anything moving fast near the goal as a
+    shot candidate with no notion of "that was actually a pass," so
+    <strong>most flagged candidates will turn out to be something else</strong> -
+    pick whatever it actually was, not just correct/incorrect.
   </p>
 </header>
 
@@ -275,7 +295,7 @@
         <label class="field-label" for="addEventType">Event type</label>
         <select id="addEventType" required>
           <option value="">Select…</option>
-          <option value="shot">Shot attempt</option>
+          <option value="shot">Ball action (shot, pass, header, etc.)</option>
           <option value="restart">Restart / phase change</option>
         </select>
       </div>
@@ -299,12 +319,24 @@
   let db = null;
   let events = [];
 
-  const SHOT_CATEGORIES = [
-    ["goal", "Goal"],
-    ["save", "Save"],
-    ["blocked", "Blocked by a defender"],
-    ["missed", "Missed (off target, no deflection)"],
-    ["not_a_shot", "Not a shot attempt"],
+  // Mirrors the SoccerNet Ball Action Spotting taxonomy (Pass, Drive, Header,
+  // Cross, Throw In, Shot, Block, Tackle, ...) so labels collected here are
+  // usable as training data for an action-type classifier later, not just a
+  // one-off review note. shot_* keeps the outcome granularity the old
+  // shot-only category list had; everything else is a non-shot action type
+  // so a reviewer can say what a flagged "shot candidate" actually was.
+  const ACTION_CATEGORIES = [
+    ["shot_goal", "Shot — Goal"],
+    ["shot_save", "Shot — Saved"],
+    ["shot_blocked", "Shot — Blocked by a defender"],
+    ["shot_missed", "Shot — Missed (off target, no deflection)"],
+    ["pass", "Pass"],
+    ["cross", "Cross"],
+    ["header", "Header (not a shot)"],
+    ["throw_in", "Throw-in"],
+    ["tackle_or_block", "Tackle / defensive block"],
+    ["dribble", "Dribble / carry"],
+    ["not_a_ball_action", "Not a ball action (false detection)"],
     ["other", "Other"],
   ];
   const RESTART_CATEGORIES = [
@@ -319,7 +351,7 @@
 
   document.getElementById("addEventType").addEventListener("change", (e) => {
     const categorySelect = document.getElementById("addCategory");
-    const options = e.target.value === "shot" ? SHOT_CATEGORIES : e.target.value === "restart" ? RESTART_CATEGORIES : null;
+    const options = e.target.value === "shot" ? ACTION_CATEGORIES : e.target.value === "restart" ? RESTART_CATEGORIES : null;
     if (!options) {
       categorySelect.disabled = true;
       categorySelect.innerHTML = '<option value="">Pick an event type first…</option>';
@@ -381,13 +413,16 @@
           <span class="event-source">${e.source}</span>
         </div>
         ${e.pipeline_classification ? `<div class="pipeline-call">${pipelineCallText(e)}</div>` : ""}
+        ${e.clip_url
+          ? `<video class="clip-video" src="${e.clip_url}" controls preload="metadata"></video>`
+          : (e.source === "pipeline" && !e.review_verdict ? `<p class="empty-note">No clip extracted for this one yet - going on the timestamp/detector call alone.</p>` : "")}
         ${pill}
       `;
 
       if (e.source === "manual" || e.review_verdict) {
         const summary = document.createElement("div");
         summary.className = "reviewed-summary";
-        const typeTag = e.event_type ? `[${e.event_type === "shot" ? "Shot" : "Restart"}] ` : "";
+        const typeTag = e.event_type ? `[${e.event_type === "shot" ? "Action" : "Restart"}] ` : "";
         summary.innerHTML = `${typeTag}<strong>${(e.category || "").replace(/_/g, " ")}</strong> — ${e.description || ""}`;
         card.appendChild(summary);
       } else {
@@ -401,12 +436,7 @@
           </div>
           <select class="review-category">
             <option value="">What actually happened?</option>
-            <option value="goal">Goal</option>
-            <option value="save">Save</option>
-            <option value="blocked">Blocked by a defender</option>
-            <option value="missed">Missed (off target, no deflection)</option>
-            <option value="not_a_shot">Not a shot attempt</option>
-            <option value="other">Other</option>
+            ${ACTION_CATEGORIES.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}
           </select>
           <textarea placeholder="Describe what you saw"></textarea>
           <button type="submit">Submit Review</button>

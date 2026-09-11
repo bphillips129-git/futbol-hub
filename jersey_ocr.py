@@ -23,7 +23,7 @@ MIN_CROP_HEIGHT_PX = 200  # upscale smaller crops to roughly this height
 
 
 class JerseyOCR:
-    def __init__(self, gpu: bool = False):
+    def __init__(self, gpu: bool = True):
         self.reader = easyocr.Reader(["en"], gpu=gpu, verbose=False)
 
     def read_number(self, frame, box: tuple[float, float, float, float]) -> tuple[str | None, float]:
